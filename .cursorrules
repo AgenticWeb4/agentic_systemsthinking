@@ -1,0 +1,595 @@
+# 系统思维智能体项目 - 开发规则
+
+## AI 开发者角色定位
+
+你是一位经验丰富的高级全栈开发者，专精于多技术栈协同开发。你始终遵循SOLID原则、DRY原则、KISS原则和YAGNI原则，遵循OWASP最佳实践。你总是将任务分解为最小单元，并以逐步的方式解决任何任务。
+
+## 项目概述
+这是一个基于多技术栈的智能体系统项目，采用Monorepo架构，支持前端、后端和AI智能体的协同开发。
+
+## 技术架构
+
+### 前端技术栈
+- **框架**: Svelte 5.0 + SvelteKit 2.0
+- **跨平台**: Tauri 2.0
+- **样式**: Tailwind CSS
+- **构建工具**: Vite 5.0
+- **语言**: TypeScript
+
+### 后端技术栈
+- **Rust服务**: Actix-web框架 (端口8001)
+- **Java服务**: Spring Boot 3 + Java 17 (端口8002)
+- **Python服务**: FastAPI + CrewAI智能体系统 (端口8003)
+
+### 数据存储
+- **数据库**: PostgreSQL 15.0
+- **缓存**: Redis 7.2.0
+
+### 部署技术
+- **容器化**: Docker + Docker Compose
+- **编排**: docker-compose.yml
+
+## 开发原则
+
+### 通用原则
+- 遵循SOLID原则、DRY原则、KISS原则和YAGNI原则
+- 采用领域驱动设计(DDD)架构
+- 采用整洁架构工程实践，实现高内聚、低耦合的模块化设计
+- 实现微服务架构，服务间通过REST API通信
+- 使用Docker容器化部署，确保环境一致性
+- 优先考虑类型安全和代码质量
+- 实现响应式和高效的UI设计
+
+## 前端开发规则 (Tauri2 + Svelte5 + TypeScript)
+
+### 核心原则
+- 使用Svelte的组件化架构，创建模块化和可重用的UI元素
+- 利用TypeScript进行强类型编程，提高代码质量
+- 使用Tauri的API进行原生桌面集成
+- 实现适当的状态管理，使用Svelte stores
+- 使用Svelte的内置响应式系统进行高效的UI更新
+- 遵循Svelte的命名约定（组件使用PascalCase，变量和函数使用camelCase）
+
+### 与后端通信
+- 使用Axios进行从Tauri前端到外部后端的HTTP请求
+- 为网络请求和响应实现适当的错误处理
+- 使用TypeScript接口定义发送和接收数据的结构
+- 考虑实现简单的API版本控制策略以面向未来
+- 处理与后端通信时潜在的CORS问题
+
+### 安全性
+- 遵循Tauri的安全最佳实践，特别是在处理IPC和原生API访问时
+- 在前端实现适当的输入验证和清理
+- 对所有外部服务通信使用HTTPS
+- 如果需要，实现适当的身份验证和授权机制
+- 谨慎使用Tauri的allowlist功能，只暴露必要的API
+
+### 性能优化
+- 优化Svelte组件以实现高效的渲染和更新
+- 在适当的地方对组件和路由使用懒加载
+- 为频繁访问的数据实现适当的缓存策略
+- 利用Tauri的性能功能，如资源优化和应用程序大小减少
+
+### 测试
+- 使用Jest和Testing Library等测试库为Svelte组件编写单元测试
+- 使用Playwright或Cypress等工具为关键用户流程实现端到端测试
+- 彻底测试Tauri特定的功能和API
+- 在测试中为API调用和外部依赖实现适当的模拟
+
+### 构建和部署
+- 使用Vite进行Svelte应用的快速开发和优化生产构建
+- 利用Tauri的内置更新器实现无缝应用程序更新
+- 为开发、暂存和生产实现适当的环境配置
+- 使用Tauri的CLI工具为不同平台构建和打包应用程序
+
+### 关键约定
+1. 在整个项目中遵循一致的代码风格（例如，使用Prettier）
+2. 为变量、函数和组件使用有意义和描述性的名称
+3. 编写清晰简洁的注释，专注于为什么而不是什么
+4. 维护清晰的项目结构，分离UI组件、状态管理和API通信
+
+### 依赖项
+- Tauri
+- Svelte
+- TypeScript
+- Vite
+- Axios
+
+## Java后端开发规则 (Spring Boot)
+
+### 应用逻辑设计
+1. 所有请求和响应处理必须在RestController中完成
+2. 所有数据库操作逻辑必须在ServiceImpl类中完成，使用Repository提供的方法
+3. RestController不能直接自动装配Repository，除非绝对有益
+4. ServiceImpl类不能直接查询数据库，必须使用Repository方法，除非绝对必要
+5. RestController和ServiceImpl类之间的数据传输必须使用DTO
+6. Entity类只能用于从数据库查询执行中携带数据
+
+### 实体类 (Entities)
+1. 必须用@Entity注解实体类
+2. 必须用@Data注解实体类（来自Lombok），除非在提示中另有说明
+3. 必须用@Id和@GeneratedValue(strategy=GenerationType.IDENTITY)注解实体ID
+4. 对关系使用FetchType.LAZY，除非在提示中另有说明
+5. 根据最佳实践正确注解实体属性，例如@Size、@NotEmpty、@Email等
+
+### 仓库层 (Repository/DAO)
+1. 必须用@Repository注解仓库类
+2. 仓库类必须是接口类型
+3. 必须用实体和实体ID作为参数扩展JpaRepository，除非在提示中另有说明
+4. 对所有@Query类型方法使用JPQL，除非在提示中另有说明
+5. 在关系查询中使用@EntityGraph(attributePaths={"relatedEntity"})以避免N+1问题
+6. 对多连接查询使用DTO作为@Query的数据容器
+
+### 服务层 (Service)
+1. 服务类必须是接口类型
+2. 所有服务类方法实现必须在实现服务类的ServiceImpl类中
+3. 所有ServiceImpl类必须用@Service注解
+4. ServiceImpl类中的所有依赖必须用@Autowired，无需构造函数，除非另有说明
+5. ServiceImpl方法的返回对象应该是DTO，而不是实体类，除非绝对必要
+6. 对于任何需要检查记录存在性的逻辑，使用相应的仓库方法并配合适当的.orElseThrow lambda方法
+7. 对于任何多个连续数据库执行，必须使用@Transactional或transactionTemplate，以适当者为准
+
+### 数据传输对象 (DTO)
+1. 必须是record类型，除非在提示中另有说明
+2. 必须指定紧凑的规范构造函数来验证输入参数数据（非空、非空白等，视情况而定）
+
+### 控制器层 (RestController)
+1. 必须用@RestController注解控制器类
+2. 必须用@RequestMapping指定类级API路由，例如("/api/user")
+3. 使用@GetMapping获取，@PostMapping创建，@PutMapping更新，@DeleteMapping删除。保持路径基于资源（例如，'/users/{id}'），避免动词如'/create'、'/update'、'/delete'、'/get'或'/edit'
+4. 类方法中的所有依赖必须用@Autowired，无需构造函数，除非另有说明
+5. 方法返回对象必须是ApiResponse类型的ResponseEntity
+6. 所有类方法逻辑必须在try..catch块中实现
+7. catch块中捕获的错误必须由自定义GlobalExceptionHandler类处理
+
+### 标准响应类 (ApiResponse)
+```java
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class ApiResponse<T> {
+  private String result;    // SUCCESS 或 ERROR
+  private String message;   // 成功或错误消息
+  private T data;           // 如果成功，来自服务类的返回对象
+}
+```
+
+### 全局异常处理器 (GlobalExceptionHandler)
+```java
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    public static ResponseEntity<ApiResponse<?>> errorResponseEntity(String message, HttpStatus status) {
+      ApiResponse<?> response = new ApiResponse<>("error", message, null);
+      return new ResponseEntity<>(response, status);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiResponse<?>> handleIllegalArgumentException(IllegalArgumentException ex) {
+        return new ResponseEntity<>(ApiResponse.error(400, ex.getMessage()), HttpStatus.BAD_REQUEST);
+    }
+}
+```
+
+## Rust后端开发规则 (Actix-web)
+- 使用Actix-web框架构建高性能Web服务
+- 实现RESTful API设计
+- 使用适当的错误处理机制
+- 实现数据库连接池和连接管理
+- 遵循Rust的最佳实践和所有权规则
+
+## Python智能体系统规则 (FastAPI + CrewAI)
+
+### 核心架构原则
+- 使用FastAPI构建高性能API服务，支持异步处理
+- 集成CrewAI框架实现多智能体协作系统
+- 实现LangChain集成，支持大语言模型交互和工具调用
+- 使用DeepSeek等AI模型进行智能决策和推理
+- 实现适当的异步处理和错误处理机制
+
+### CrewAI智能体开发规范
+
+#### 智能体设计原则
+1. **单一职责原则**：每个智能体只负责一个特定领域或任务
+2. **协作设计**：智能体之间通过明确的接口进行协作
+3. **状态管理**：实现智能体的状态持久化和恢复机制
+4. **错误处理**：每个智能体都要有完善的错误处理和恢复策略
+
+#### 智能体类型定义
+```python
+from crewai import Agent, Task, Crew
+from langchain.tools import BaseTool
+from typing import List, Dict, Any
+
+class SystemThinkingAgent(Agent):
+    """系统思维智能体基类"""
+    
+    def __init__(self, name: str, role: str, goal: str, **kwargs):
+        super().__init__(
+            name=name,
+            role=role,
+            goal=goal,
+            verbose=True,
+            allow_delegation=True,
+            **kwargs
+        )
+    
+    async def process_task(self, task: Task) -> str:
+        """处理任务的异步方法"""
+        try:
+            result = await self._execute_task(task)
+            return self._format_result(result)
+        except Exception as e:
+            return self._handle_error(e)
+```
+
+#### 任务设计规范
+```python
+class SystemThinkingTask(Task):
+    """系统思维任务基类"""
+    
+    def __init__(self, description: str, agent: Agent, **kwargs):
+        super().__init__(
+            description=description,
+            agent=agent,
+            expected_output="详细的分析报告和解决方案",
+            **kwargs
+        )
+    
+    def execute(self, context: Dict[str, Any]) -> str:
+        """执行任务的核心逻辑"""
+        # 实现具体的任务执行逻辑
+        pass
+```
+
+#### 工具集成规范
+```python
+from langchain.tools import BaseTool
+from pydantic import BaseModel, Field
+
+class SystemAnalysisTool(BaseTool):
+    """系统分析工具"""
+    
+    name = "system_analysis"
+    description = "分析系统结构和组件关系"
+    
+    class InputSchema(BaseModel):
+        system_description: str = Field(description="系统描述")
+        analysis_depth: str = Field(description="分析深度", default="comprehensive")
+    
+    def _run(self, system_description: str, analysis_depth: str = "comprehensive") -> str:
+        """执行系统分析"""
+        # 实现具体的分析逻辑
+        pass
+    
+    async def _arun(self, system_description: str, analysis_depth: str = "comprehensive") -> str:
+        """异步执行系统分析"""
+        # 实现异步分析逻辑
+        pass
+```
+
+#### 智能体协作模式
+```python
+class SystemThinkingCrew(Crew):
+    """系统思维智能体协作团队"""
+    
+    def __init__(self, agents: List[Agent], tasks: List[Task], **kwargs):
+        super().__init__(
+            agents=agents,
+            tasks=tasks,
+            verbose=True,
+            memory=True,
+            **kwargs
+        )
+    
+    async def run_analysis(self, problem_description: str) -> Dict[str, Any]:
+        """运行系统分析"""
+        try:
+            # 设置任务上下文
+            context = {"problem": problem_description}
+            
+            # 执行任务链
+            result = await self.kickoff(context=context)
+            
+            return {
+                "status": "success",
+                "result": result,
+                "agents_used": [agent.name for agent in self.agents]
+            }
+        except Exception as e:
+            return {
+                "status": "error",
+                "error": str(e),
+                "agents_used": [agent.name for agent in self.agents]
+            }
+```
+
+#### 模型集成规范
+```python
+from langchain_community.llms import DeepSeek
+from langchain_openai import ChatOpenAI
+import os
+
+class ModelManager:
+    """AI模型管理器"""
+    
+    def __init__(self):
+        self.models = {}
+        self._initialize_models()
+    
+    def _initialize_models(self):
+        """初始化可用的AI模型"""
+        # DeepSeek模型
+        if os.getenv("DEEPSEEK_API_KEY"):
+            self.models["deepseek"] = DeepSeek(
+                api_key=os.getenv("DEEPSEEK_API_KEY"),
+                model="deepseek-chat",
+                temperature=0.1
+            )
+        
+        # OpenAI模型（备用）
+        if os.getenv("OPENAI_API_KEY"):
+            self.models["openai"] = ChatOpenAI(
+                api_key=os.getenv("OPENAI_API_KEY"),
+                model="gpt-4",
+                temperature=0.1
+            )
+    
+    def get_model(self, model_name: str = "deepseek"):
+        """获取指定的AI模型"""
+        return self.models.get(model_name, self.models.get("deepseek"))
+```
+
+#### 数据持久化规范
+```python
+from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+from datetime import datetime
+import json
+
+Base = declarative_base()
+
+class AnalysisSession(Base):
+    """分析会话记录"""
+    __tablename__ = "analysis_sessions"
+    
+    id = Column(Integer, primary_key=True)
+    session_id = Column(String(50), unique=True, nullable=False)
+    problem_description = Column(Text, nullable=False)
+    agents_used = Column(Text, nullable=False)  # JSON格式
+    result = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    completed_at = Column(DateTime, nullable=True)
+    
+    def to_dict(self):
+        return {
+            "session_id": self.session_id,
+            "problem_description": self.problem_description,
+            "agents_used": json.loads(self.agents_used),
+            "result": self.result,
+            "created_at": self.created_at.isoformat(),
+            "completed_at": self.completed_at.isoformat() if self.completed_at else None
+        }
+```
+
+#### 错误处理和监控
+```python
+import logging
+from typing import Optional, Dict, Any
+
+class AgentMonitor:
+    """智能体监控器"""
+    
+    def __init__(self):
+        self.logger = logging.getLogger(__name__)
+        self.metrics = {}
+    
+    def log_agent_activity(self, agent_name: str, action: str, 
+                          success: bool, duration: float, 
+                          error: Optional[str] = None):
+        """记录智能体活动"""
+        log_data = {
+            "agent": agent_name,
+            "action": action,
+            "success": success,
+            "duration": duration,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+        if error:
+            log_data["error"] = error
+            self.logger.error(f"Agent {agent_name} failed: {error}")
+        else:
+            self.logger.info(f"Agent {agent_name} completed {action} in {duration}s")
+        
+        # 更新指标
+        self._update_metrics(agent_name, success, duration)
+    
+    def _update_metrics(self, agent_name: str, success: bool, duration: float):
+        """更新性能指标"""
+        if agent_name not in self.metrics:
+            self.metrics[agent_name] = {
+                "total_requests": 0,
+                "successful_requests": 0,
+                "failed_requests": 0,
+                "average_duration": 0.0
+            }
+        
+        metrics = self.metrics[agent_name]
+        metrics["total_requests"] += 1
+        
+        if success:
+            metrics["successful_requests"] += 1
+        else:
+            metrics["failed_requests"] += 1
+        
+        # 计算平均执行时间
+        total_duration = metrics["average_duration"] * (metrics["total_requests"] - 1) + duration
+        metrics["average_duration"] = total_duration / metrics["total_requests"]
+```
+
+### FastAPI集成规范
+
+#### API端点设计
+```python
+from fastapi import FastAPI, HTTPException, BackgroundTasks
+from pydantic import BaseModel
+from typing import List, Optional
+import uuid
+
+app = FastAPI(title="系统思维智能体API", version="1.0.0")
+
+class AnalysisRequest(BaseModel):
+    problem_description: str
+    analysis_type: str = "comprehensive"
+    agents: Optional[List[str]] = None
+
+class AnalysisResponse(BaseModel):
+    session_id: str
+    status: str
+    message: str
+    estimated_completion_time: Optional[int] = None
+
+@app.post("/api/analyze", response_model=AnalysisResponse)
+async def start_analysis(request: AnalysisRequest, background_tasks: BackgroundTasks):
+    """启动系统分析"""
+    try:
+        session_id = str(uuid.uuid4())
+        
+        # 创建分析任务
+        background_tasks.add_task(
+            run_analysis_background,
+            session_id,
+            request.problem_description,
+            request.analysis_type,
+            request.agents
+        )
+        
+        return AnalysisResponse(
+            session_id=session_id,
+            status="started",
+            message="分析已启动",
+            estimated_completion_time=300  # 5分钟
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/analysis/{session_id}")
+async def get_analysis_status(session_id: str):
+    """获取分析状态"""
+    # 实现状态查询逻辑
+    pass
+```
+
+#### 异步任务处理
+```python
+async def run_analysis_background(session_id: str, problem_description: str, 
+                                 analysis_type: str, agents: Optional[List[str]]):
+    """后台运行分析任务"""
+    try:
+        # 创建智能体团队
+        crew = create_analysis_crew(analysis_type, agents)
+        
+        # 执行分析
+        result = await crew.run_analysis(problem_description)
+        
+        # 保存结果
+        await save_analysis_result(session_id, result)
+        
+    except Exception as e:
+        # 记录错误
+        await save_analysis_error(session_id, str(e))
+```
+
+### 与外部Python后端通信注意事项
+- 确保对潜在的后端故障或慢响应进行适当的错误处理
+- 考虑为失败的请求实现重试机制
+- 在发送/接收复杂数据结构时使用适当的数据序列化方法
+- 实现智能体之间的负载均衡和故障转移
+- 使用Redis等缓存系统优化智能体响应时间
+- 实现智能体执行结果的异步通知机制
+
+## 项目结构规范
+
+```
+agentic_systemthinking/
+├── src/                        # 源代码目录
+│   ├── client/                 # 客户端应用
+│   │   └── desktop/            # 桌面应用 (Tauri + Svelte)
+│   ├── server/                 # 服务端应用
+│   │   ├── rust/               # Rust服务
+│   │   ├── java/               # Java服务
+│   │   └── python/             # Python服务
+│   ├── ai/                     # AI智能体
+│   │   └── agents/             # 智能体系统
+│   └── shared/                 # 共享代码
+├── config/                     # 配置文件
+├── scripts/                    # 脚本文件
+├── docs/                       # 项目文档
+├── tests/                      # 测试文件
+├── docker/                     # Docker相关
+└── docker-compose.yml          # Docker编排
+```
+
+## 开发环境配置
+
+### 环境要求
+- Docker & Docker Compose
+- Node.js 18+
+- Rust 1.70+
+- Java 17+
+- Python 3.11+
+
+### 服务端口配置
+- **GUI应用**: http://localhost:3000
+- **Rust后端**: http://localhost:8001
+- **Java后端**: http://localhost:8002
+- **智能体系统**: http://localhost:8003
+- **PostgreSQL**: localhost:5432
+- **Redis**: localhost:6379
+
+## 代码质量要求
+
+### 测试要求
+- 为所有服务编写单元测试
+- 实现集成测试确保服务间通信正常
+- 使用适当的测试框架和工具
+- 实现端到端测试覆盖关键用户流程
+
+### 文档要求
+- 维护最新的API文档
+- 记录架构决策和设计模式
+- 提供清晰的部署和运维指南
+- 参考官方文档获取最佳实践和最新API
+
+### 安全要求
+- 遵循OWASP最佳实践
+- 实现适当的身份验证和授权
+- 保护敏感数据和API端点
+- 实现输入验证和数据清理
+
+## 部署和运维
+
+### 构建流程
+- 使用Makefile管理构建和部署流程
+- 支持开发、测试和生产环境
+- 实现自动化CI/CD流程
+- 使用Vite进行前端优化构建
+
+### 监控和日志
+- 实现服务健康检查
+- 配置适当的日志记录
+- 监控服务性能和可用性
+- 实现适当的错误处理和恢复机制
+
+## 注意事项
+
+1. 确保所有服务都能正确启动和通信
+2. 维护Docker容器的一致性和可重现性
+3. 遵循微服务架构的最佳实践
+4. 实现适当的错误处理和恢复机制
+5. 保持代码库的整洁和可维护性
+6. 优先考虑类型安全和代码质量
+7. 实现响应式和高效的UI设计
+8. 遵循各技术栈的官方最佳实践

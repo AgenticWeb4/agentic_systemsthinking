@@ -1,0 +1,24 @@
+# 多阶段构建 - Rust后端服务
+FROM rust:1.70-alpine AS builder
+
+# 安装构建依赖
+RUN apk add --no-cache musl-dev
+
+WORKDIR /app
+COPY Cargo.toml Cargo.lock ./
+COPY src ./src
+
+# 构建应用
+RUN cargo build --release
+
+# 生产阶段
+FROM alpine:latest
+
+# 安装运行时依赖
+RUN apk add --no-cache libgcc
+
+WORKDIR /app
+COPY --from=builder /app/target/release/rust-backend .
+
+EXPOSE 8001
+CMD ["./rust-backend"]

@@ -1,0 +1,37 @@
+# 多阶段构建 - 智能体系统
+FROM python:3.11-slim AS builder
+
+WORKDIR /app
+
+# 安装构建依赖
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+# 复制依赖文件
+COPY requirements.txt pyproject.toml ./
+
+# 安装Python依赖
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 生产阶段
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# 安装运行时依赖
+RUN apt-get update && apt-get install -y \
+    libpq5 \
+    && rm -rf /var/lib/apt/lists/*
+
+# 复制Python依赖和应用代码
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+COPY src ./src
+
+# 创建日志目录
+RUN mkdir -p logs
+
+EXPOSE 8003
+CMD ["python", "src/main.py"]

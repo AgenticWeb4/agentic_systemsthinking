@@ -1,0 +1,101 @@
+version: '3.8'
+
+services:
+  # PostgreSQL数据库
+  postgres:
+    image: postgres:15.0
+    container_name: agentic_postgres
+    environment:
+      POSTGRES_DB: mydb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - agentic_network
+
+  # Redis缓存
+  redis:
+    image: redis:7.2.0
+    container_name: agentic_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - agentic_network
+
+  # Rust后端服务
+  rust-backend:
+    build:
+      context: ../../apps/backend-rust
+      dockerfile: ../../infrastructure/docker/dev/Dockerfile.rust
+    container_name: agentic_rust_backend
+    ports:
+      - "8001:8001"
+    environment:
+      - DATABASE_URL=postgres://postgres:password@postgres:5432/mydb
+      - RUST_LOG=info
+    depends_on:
+      - postgres
+    networks:
+      - agentic_network
+
+  # Java后端服务
+  java-backend:
+    build:
+      context: ../../apps/backend-java
+      dockerfile: ../../infrastructure/docker/dev/Dockerfile.java
+    container_name: agentic_java_backend
+    ports:
+      - "8002:8002"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/mydb
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=password
+    depends_on:
+      - postgres
+    networks:
+      - agentic_network
+
+  # 智能体系统
+  agent-system:
+    build:
+      context: ../../apps/agent-system
+      dockerfile: ../../infrastructure/docker/dev/Dockerfile.agent
+    container_name: agentic_agent_system
+    ports:
+      - "8003:8003"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:password@postgres:5432/mydb
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - agentic_network
+
+  # GUI应用（开发模式）
+  gui:
+    build:
+      context: ../../apps/gui
+      dockerfile: ../../infrastructure/docker/dev/Dockerfile.gui
+    container_name: agentic_gui
+    ports:
+      - "3000:80"
+    depends_on:
+      - rust-backend
+      - java-backend
+      - agent-system
+    networks:
+      - agentic_network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  agentic_network:
+    driver: bridge

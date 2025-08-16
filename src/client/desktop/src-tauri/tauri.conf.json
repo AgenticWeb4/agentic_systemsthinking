@@ -1,0 +1,21 @@
+{
+  "identifier": "com.agentic.systemthinking",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "系统思维智能体项目",
+        "width": 1200,
+        "height": 800,
+        "url": "http://localhost:3000"
+      }
+    ]
+  },
+  "bundle": {
+    "icon": []
+  }
+}

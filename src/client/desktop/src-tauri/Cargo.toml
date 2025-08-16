@@ -1,0 +1,17 @@
+[package]
+name = "agentic-systemthinking-gui"
+version = "1.0.0"
+description = "GUI桌面应用 - 系统思维智能体项目"
+authors = ["System Engineering Team"]
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2.0.0", features = [] }
+
+[dependencies]
+tauri = { version = "2.0.0", features = [] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[features]
+custom-protocol = ["tauri/custom-protocol"]

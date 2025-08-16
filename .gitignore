@@ -1,0 +1,73 @@
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 编辑器文件
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 日志文件
+logs/
+*.log
+
+# 环境变量文件
+.env
+.env.local
+.env.*.local
+
+# 依赖目录
+node_modules/
+target/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# 构建输出
+dist/
+build/
+*.egg-info/
+*.egg
+
+# 数据库文件
+*.db
+*.sqlite
+*.sqlite3
+
+# 临时文件
+tmp/
+temp/
+*.tmp
+
+# 测试覆盖率
+coverage/
+.coverage
+htmlcov/
+
+# 缓存文件
+.cache/
+.parcel-cache/
+.npm/
+.eslintcache
+
+# 密钥文件
+*.pem
+*.key
+*.crt
+
+# Docker
+.dockerignore
+
+# 其他
+*.bak
+*.orig
+*.rej

@@ -1,0 +1,14 @@
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+sqlalchemy==2.0.23
+psycopg2-binary==2.9.9
+asyncpg==0.29.0
+httpx==0.25.2
+python-dotenv==1.0.0
+pydantic==2.5.0
+crewai==0.40.0
+langchain==0.1.0
+langchain-openai==0.0.2
+chromadb==0.4.0
+redis==5.0.1
+loguru==0.7.2
