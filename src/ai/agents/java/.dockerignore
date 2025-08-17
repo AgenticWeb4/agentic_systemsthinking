@@ -1,0 +1,40 @@
+# Maven构建文件
+target/
+*.jar
+*.war
+*.ear
+
+# IDE文件
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+
+# 日志文件
+*.log
+logs/
+
+# 临时文件
+*.tmp
+*.temp
+
+# Git文件
+.git/
+.gitignore
+
+# 文档文件
+README.md
+docs/
+
+# 测试文件
+src/test/
+test/
+
+# 其他
+node_modules/
+npm-debug.log*
