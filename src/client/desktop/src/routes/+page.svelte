@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { theme } from '$lib/stores/theme';
   import StatusCard from '$lib/components/StatusCard.svelte';
   import ThemeToggle from '$lib/components/ThemeToggle.svelte';
@@ -7,96 +7,61 @@
   import RefreshButton from '$lib/components/RefreshButton.svelte';
   import SystemResources from '$lib/components/SystemResources.svelte';
   import QuickActions from '$lib/components/QuickActions.svelte';
-  import Notification from '$lib/components/Notification.svelte';
-  import type { Services } from '$lib/types/service';
-  import { checkServiceHealth, serviceConfigs } from '$lib/utils/healthCheck';
+import Notification from '$lib/components/Notification.svelte';
   
-  let services: Services = {
-    gui: { status: 'Checking...', db: 'Checking...' },
-    rust: { status: 'Checking...', db: 'Checking...' },
-    java: { status: 'Checking...', db: 'Checking...' },
-    agent: { status: 'Checking...', db: 'Checking...' },
-    javaAgent: { status: 'Checking...', db: 'Checking...' },
-    orchestration: { status: 'Checking...', db: 'Checking...' }
-  };
   
-  let loading = true;
-  let refreshing = false;
-  let notification = {
-    show: false,
-    type: 'info' as 'info' | 'success' | 'warning' | 'error',
-    title: '',
-    message: ''
-  };
+// 导入重构后的store
+  import { 
+    services, 
+    loading, 
+    refreshing, 
+    overallHealth, 
+    serviceSummary,
+    lastUpdated,
+    checkAllServices, 
+    refreshService 
+  } from '$lib/stores/services';
   
-  async function checkAllServices() {
-    try {
-      // 并行检查所有服务
-      const healthPromises = serviceConfigs.map(config => 
-        checkServiceHealth(config).then(result => ({ name: config.name, result }))
-      );
-      
-      const results = await Promise.all(healthPromises);
-      
-      // 更新服务状态
-      results.forEach(({ name, result }) => {
-        if (name in services) {
-          services[name] = result;
-        }
-      });
-      
-      // GUI服务总是健康的
-      services.gui = { status: 'Healthy', db: 'Healthy' };
-      
-      // 显示成功通知
-      showNotification('success', '服务检查完成', '所有服务状态已更新');
-      
-    } catch (error) {
-      console.error('Service health check failed:', error);
-      showNotification('error', '服务检查失败', '无法获取服务状态信息');
-    } finally {
-      loading = false;
-      refreshing = false;
-    }
-  }
+  import { notify, notifications, removeNotification } from '$lib/stores/notifications';
+  
+  let autoRefreshInterval: number;
   
   async function handleRefresh() {
-    refreshing = true;
     await checkAllServices();
+    notify.success('刷新完成', '服务状态已更新');
   }
   
   function handleQuickAction(action: string) {
     switch (action) {
       case 'restart-all':
-        showNotification('warning', '重启服务', '正在重启所有服务...');
+        notify.warning('重启服务', '正在重启所有服务...');
         break;
       case 'view-logs':
-        showNotification('info', '查看日志', '日志查看功能开发中...');
+        notify.info('查看日志', '日志查看功能开发中...');
         break;
       case 'system-info':
-        showNotification('info', '系统信息', '系统信息功能开发中...');
+        notify.info('系统信息', '系统信息功能开发中...');
         break;
       case 'settings':
-        showNotification('info', '设置', '设置功能开发中...');
+        notify.info('设置', '设置功能开发中...');
         break;
       default:
-        showNotification('info', '操作', `执行操作: ${action}`);
+        notify.info('操作', `执行操作: ${action}`);
     }
   }
   
-  function showNotification(type: 'info' | 'success' | 'warning' | 'error', title: string, message: string) {
-    notification = { show: true, type, title, message };
-  }
-  
-  function hideNotification() {
-    notification.show = false;
-  }
-  
   onMount(() => {
+    // 初始检查
     checkAllServices();
+    
     // 每30秒自动检查一次服务健康状态
-    const interval = setInterval(checkAllServices, 30000);
-    return () => clearInterval(interval);
+    autoRefreshInterval = setInterval(checkAllServices, 30000);
+  });
+  
+  onDestroy(() => {
+    if (autoRefreshInterval) {
+      clearInterval(autoRefreshInterval);
+    }
   });
 </script>
 
@@ -104,15 +69,6 @@
   <title>系统思维智能体项目 - 服务健康状态</title>
   <meta name="description" content="系统思维智能体项目服务监控仪表板" />
 </svelte:head>
-
-<!-- 通知组件 -->
-<Notification
-  bind:show={notification.show}
-  type={notification.type}
-  title={notification.title}
-  message={notification.message}
-  on:close={hideNotification}
-/>
 
 <!-- 主题切换按钮 -->
 <ThemeToggle theme={$theme} on:themeChange={(e) => theme.set(e.detail)} />
@@ -127,10 +83,42 @@
       <p class="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
         智能化的系统思维分析与决策支持平台
       </p>
+      
+      <!-- 总体健康状态 -->
+      <div class="mt-4">
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+          {$overallHealth}
+        </span>
+      </div>
+      
+      <!-- 最后更新时间 -->
+      {#if $lastUpdated}
+        <div class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+          最后更新: {$lastUpdated.toLocaleTimeString()}
+        </div>
+      {/if}
+    </div>
+    
+    <!-- 服务状态摘要 -->
+    <div class="mb-6 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+      <div class="flex flex-wrap justify-center gap-4 text-sm">
+        <span class="text-gray-600 dark:text-gray-400">
+          总计: <span class="font-semibold">{$serviceSummary.total}</span>
+        </span>
+        <span class="text-green-600 dark:text-green-400">
+          健康: <span class="font-semibold">{$serviceSummary.healthy}</span>
+        </span>
+        <span class="text-red-600 dark:text-red-400">
+          异常: <span class="font-semibold">{$serviceSummary.unhealthy}</span>
+        </span>
+        <span class="text-yellow-600 dark:text-yellow-400">
+          检查中: <span class="font-semibold">{$serviceSummary.checking}</span>
+        </span>
+      </div>
     </div>
     
     <!-- 服务状态网格 -->
-    {#if loading}
+    {#if $loading}
       <div class="flex justify-center items-center py-20">
         <LoadingSpinner size="lg" theme={$theme} />
       </div>
@@ -139,48 +127,48 @@
         <!-- GUI服务 -->
         <StatusCard
           title="GUI服务"
-          status={services.gui.status}
-          dbStatus={services.gui.db}
+          status={$services.gui.status}
+          dbStatus={$services.gui.db}
           theme={$theme}
         />
         
         <!-- Rust后端服务 -->
         <StatusCard
           title="Rust后端服务"
-          status={services.rust.status}
-          dbStatus={services.rust.db}
+          status={$services.rust.status}
+          dbStatus={$services.rust.db}
           theme={$theme}
         />
         
         <!-- Java后端服务 -->
         <StatusCard
           title="Java后端服务"
-          status={services.java.status}
-          dbStatus={services.java.db}
+          status={$services.java.status}
+          dbStatus={$services.java.db}
           theme={$theme}
         />
         
         <!-- Python智能体系统 -->
         <StatusCard
           title="Python智能体系统"
-          status={services.agent.status}
-          dbStatus={services.agent.db}
+          status={$services.agent.status}
+          dbStatus={$services.agent.db}
           theme={$theme}
         />
         
         <!-- Java智能体系统 -->
         <StatusCard
           title="Java智能体系统"
-          status={services.javaAgent.status}
-          dbStatus={services.javaAgent.db}
+          status={$services.javaAgent.status}
+          dbStatus={$services.javaAgent.db}
           theme={$theme}
         />
         
         <!-- 编排服务 -->
         <StatusCard
           title="编排服务"
-          status={services.orchestration.status}
-          dbStatus={services.orchestration.db}
+          status={$services.orchestration.status}
+          dbStatus={$services.orchestration.db}
           theme={$theme}
         />
       </div>
@@ -198,7 +186,7 @@
     <!-- 操作按钮 -->
     <div class="text-center mb-8">
       <RefreshButton 
-        loading={refreshing} 
+        loading={$refreshing} 
         on:refresh={handleRefresh}
       />
     </div>
@@ -207,12 +195,27 @@
     <div class="text-center">
       <div class="inline-flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
         </svg>
         <span>自动刷新间隔: 30秒</span>
         <span>•</span>
-        <span>最后更新: {new Date().toLocaleTimeString()}</span>
+        <span>最后更新: {$lastUpdated ? $lastUpdated.toLocaleTimeString() : '未更新'}</span>
       </div>
     </div>
   </div>
 </main>
+
+<!-- 通知系统 -->
+<div class="fixed top-4 right-4 z-50 space-y-2">
+  {#each $notifications as notification (notification.id)}
+    <Notification
+      id={notification.id}
+      type={notification.type}
+      title={notification.title}
+      message={notification.message}
+      timestamp={notification.timestamp}
+      actions={notification.actions}
+      on:close={(e) => removeNotification(e.detail.id)}
+    />
+  {/each}
+</div>

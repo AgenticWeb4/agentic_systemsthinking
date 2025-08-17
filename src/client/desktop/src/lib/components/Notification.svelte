@@ -1,26 +1,24 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onMount } from 'svelte';
   import { fade, fly } from 'svelte/transition';
+  import type { NotificationType, NotificationAction } from '$lib/stores/notifications';
   
-  export let type: 'info' | 'success' | 'warning' | 'error' = 'info';
+  export let id: string;
+  export let type: NotificationType = 'info';
   export let title: string;
   export let message: string;
-  export let show: boolean = false;
-  export let duration: number = 5000;
+  export let timestamp: Date;
+  export let actions: NotificationAction[] = [];
   
   const dispatch = createEventDispatcher();
   
-  let timeoutId: number;
-  
-  $: if (show && duration > 0) {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => {
-      dispatch('close');
-    }, duration);
+  function handleClose() {
+    dispatch('close', { id });
   }
   
-  function handleClose() {
-    dispatch('close');
+  function handleAction(action: NotificationAction) {
+    action.action();
+    handleClose();
   }
   
   $: iconClass = {
@@ -52,37 +50,59 @@
   }[type];
 </script>
 
-{#if show}
-  <div
-    class="fixed top-4 right-4 z-50 max-w-sm w-full"
-    transition:fly={{ y: -50, duration: 300 }}
-  >
-    <div class="border rounded-lg p-4 {bgClass} shadow-lg">
-      <div class="flex items-start space-x-3">
-        <div class="flex-shrink-0">
-          <svg class="w-6 h-6 {iconClass}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            {@html icon}
-          </svg>
-        </div>
-        
-        <div class="flex-1 min-w-0">
+<div
+  class="max-w-sm w-full"
+  transition:fly={{ y: -50, duration: 300 }}
+>
+  <div class="border rounded-lg p-4 {bgClass} shadow-lg">
+    <div class="flex items-start space-x-3">
+      <div class="flex-shrink-0">
+        <svg class="w-6 h-6 {iconClass}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          {@html icon}
+        </svg>
+      </div>
+      
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center justify-between">
           <h3 class="text-sm font-medium {textClass}">
             {title}
           </h3>
-          <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
-            {message}
-          </p>
+          <span class="text-xs text-gray-500 dark:text-gray-400">
+            {timestamp.toLocaleTimeString()}
+          </span>
         </div>
+        <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+          {message}
+        </p>
         
-        <button
+        <!-- 操作按钮 -->
+        {#if actions && actions.length > 0}
+          <div class="mt-3 flex space-x-2">
+            {#each actions as action}
+              <button
+                on:click={() => handleAction(action)}
+                class="px-2 py-1 text-xs rounded border transition-colors {
+                  action.variant === 'primary' ? 'bg-blue-500 text-white border-blue-500 hover:bg-blue-600' :
+                  action.variant === 'danger' ? 'bg-red-500 text-white border-red-500 hover:bg-red-600' :
+                  'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600'
+                }"
+              >
+                {action.label}
+              </button>
+            {/each}
+          </div>
+        {/if}
+      </div>
+      
+              <button
           on:click={handleClose}
           class="flex-shrink-0 ml-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+          aria-label="关闭通知"
         >
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
           </svg>
         </button>
-      </div>
     </div>
   </div>
-{/if}
+</div>
