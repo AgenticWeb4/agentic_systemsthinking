@@ -11,6 +11,11 @@
 /tmp
 .DS_Store
 .svelte-kit
+/.m2
+/target
+
+
+
 
 
 

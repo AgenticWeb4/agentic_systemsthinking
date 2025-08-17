@@ -4,10 +4,19 @@
 		<meta charset="utf-8" />
 		<link rel="icon" href="%sveltekit.assets%/favicon.png" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="description" content="系统思维智能体项目 - 智能化的系统思维分析与决策支持平台" />
+		<meta name="theme-color" content="#3b82f6" />
 		<title>系统思维智能体项目</title>
 		%sveltekit.head%
+		<script>
+			// 在页面加载时立即设置主题，避免闪烁
+			(function() {
+				const theme = localStorage.getItem('theme') || 'light';
+				document.documentElement.classList.toggle('dark', theme === 'dark');
+			})();
+		</script>
 	</head>
-	<body data-sveltekit-preload-data="hover">
+	<body data-sveltekit-preload-data="hover" class="antialiased">
 		<div style="display: contents">%sveltekit.body%</div>
 	</body>
 </html>

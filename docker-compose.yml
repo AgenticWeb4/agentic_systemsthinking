@@ -47,6 +47,10 @@ services:
     build:
       context: .
       dockerfile: ./docker/dev/Dockerfile.java
+      cache_from:
+        - maven:latest
+      args:
+        - BUILDKIT_INLINE_CACHE=1
     container_name: agentic_java_backend
     ports:
       - "8002:8002"
@@ -54,6 +58,7 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/mydb
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=password
+      - JAVA_OPTS=-Xms512m -Xmx1024m -XX:+UseG1GC -XX:+UseContainerSupport
     depends_on:
       - postgres
     networks:
@@ -81,6 +86,10 @@ services:
     build:
       context: ./src/ai/agents/java
       dockerfile: Dockerfile
+      cache_from:
+        - maven:latest
+      args:
+        - BUILDKIT_INLINE_CACHE=1
     container_name: agentic_java_agent
     ports:
       - "8004:8004"
@@ -90,6 +99,7 @@ services:
       - SPRING_DATASOURCE_PASSWORD=password
       - SPRING_REDIS_HOST=redis
       - SPRING_REDIS_PORT=6379
+      - JAVA_OPTS=-Xms512m -Xmx1024m -XX:+UseG1GC -XX:+UseContainerSupport
     depends_on:
       - postgres
       - redis
@@ -101,6 +111,10 @@ services:
     build:
       context: ./src/ai/agents/orchestration
       dockerfile: Dockerfile
+      cache_from:
+        - maven:latest
+      args:
+        - BUILDKIT_INLINE_CACHE=1
     container_name: agentic_orchestration
     ports:
       - "8005:8005"
@@ -110,6 +124,7 @@ services:
       - SPRING_DATASOURCE_PASSWORD=password
       - SPRING_REDIS_HOST=redis
       - SPRING_REDIS_PORT=6379
+      - JAVA_OPTS=-Xms512m -Xmx1024m -XX:+UseG1GC -XX:+UseContainerSupport
     depends_on:
       - postgres
       - redis
@@ -136,6 +151,8 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  # Maven本地仓库缓存
+  maven_cache:
 
 networks:
   agentic_network:
