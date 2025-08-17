@@ -5,7 +5,7 @@ spring:
   application:
     name: java-backend
   datasource:
-    url: jdbc:postgresql://localhost:5432/mydb
+    url: jdbc:postgresql://postgres:5432/mydb
     username: postgres
     password: password
     driver-class-name: org.postgresql.Driver

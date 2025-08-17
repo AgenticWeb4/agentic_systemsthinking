@@ -11,10 +11,13 @@ agentic_systemthinking/
 │   ├── server/                 # 服务端应用
 │   │   ├── rust/               # Rust服务
 │   │   ├── java/               # Java服务
-│   │   └── python/             # Python服务
+│   │   └── python/             # Python服务 (预留)
 │   ├── ai/                     # AI智能体
 │   │   └── agents/             # 智能体系统
-│   └── shared/                 # 共享代码
+│   │       ├── python/         # Python智能体服务
+│   │       ├── java/           # Java智能体服务
+│   │       └── orchestration/  # 智能体编排服务
+│   └── shared/                 # 共享代码 (预留)
 │       ├── types/              # 类型定义
 │       ├── utils/              # 工具函数
 │       └── constants/          # 常量定义
@@ -96,120 +99,36 @@ agentic_systemthinking/
 
 #### ai/ - AI智能体
 - **agents/**: 智能体系统
-  - 使用CrewAI框架
-  - 集成LangChain
-  - 支持多种AI模型
+  - **python/**: Python智能体服务
+    - 使用FastAPI框架
+    - 集成CrewAI智能体框架
+    - 支持异步处理
+    - 端口: 8003
+  
+  - **java/**: Java智能体服务
+    - 使用Spring Boot框架
+    - 集成Spring AI Alibaba
+    - 企业级智能体支持
+    - 端口: 8004
+  
+  - **orchestration/**: 智能体编排服务
+    - 使用Spring Boot框架
+    - 四层整洁架构设计
+    - 智能体协调和负载均衡
+    - 端口: 8005
 
-#### shared/ - 共享代码
-- **types/**: 类型定义
-  - 跨服务的数据类型
-  - API接口定义
-  - 数据库模型
+### 智能体协作架构
+- **Redis作为消息中间件**: 智能体间通过Redis Streams进行异步通信
+- **编排服务作为协调中心**: 负责任务分发、状态监控、负载均衡
+- **统一健康检查接口**: 所有后端服务提供`/health`端点
+- **服务发现**: 通过编排服务进行智能体注册和发现
 
-- **utils/**: 工具函数
-  - 通用工具函数
-  - 辅助方法
-  - 验证函数
-
-- **constants/**: 常量定义
-  - 系统常量
-  - 配置常量
-  - 枚举值
-
-### config/ - 配置文件
-
-#### env/ - 环境配置
-- 开发环境配置
-- 测试环境配置
-- 生产环境配置
-
-#### docker/ - Docker配置
-- 开发环境Dockerfile
-- 测试环境配置
-- 生产环境配置
-
-#### nginx/ - Nginx配置
-- 反向代理配置
-- 负载均衡配置
-- SSL证书配置
-
-#### database/ - 数据库配置
-- 数据库初始化脚本
-- 迁移脚本
-- 种子数据
-
-### scripts/ - 脚本文件
-
-#### dev/ - 开发脚本
-- 开发环境启动
-- 服务测试
-- 环境切换
-
-#### deploy/ - 部署脚本
-- 生产环境部署
-- 服务更新
-- 回滚脚本
-
-#### tools/ - 工具脚本
-- 配置验证
-- 代码检查
-- 性能测试
-
-### docker/ - Docker相关
-
-#### dev/ - 开发环境
-- 开发环境Dockerfile
-- 开发环境配置
-- 本地开发支持
-
-#### test/ - 测试环境
-- 测试环境配置
-- 自动化测试
-- 集成测试
-
-#### prod/ - 生产环境
-- 生产环境配置
-- 性能优化
-- 安全配置
-
-## 🔄 迁移说明
-
-### 从旧结构迁移
-- `apps/gui/` → `src/client/desktop/`
-- `apps/backend-rust/` → `src/server/rust/`
-- `apps/backend-java/` → `src/server/java/`
-- `apps/agent-system/` → `src/ai/agents/`
-- `configs/` → `config/`
-- `infrastructure/` → `docker/`
-- `tools/` → `scripts/tools/`
-
-### 路径更新
-- Docker Compose文件已更新
-- Makefile已更新
-- 启动脚本已更新
-- 配置文件路径已更新
-
-## 📝 使用建议
-
-1. **开发新功能时**：在对应的`src/`子目录下创建
-2. **添加新服务时**：在`src/server/`下创建新目录
-3. **添加新客户端时**：在`src/client/`下创建新目录
-4. **添加新AI功能时**：在`src/ai/`下创建新目录
-5. **配置文件**：统一放在`config/`目录下
-6. **脚本文件**：按功能分类放在`scripts/`目录下
-
-## 🚀 快速开始
-
-```bash
-# 查看项目结构
-tree -L 3 -I 'node_modules|target|__pycache__|*.pyc'
-
-# 启动开发环境
-make dev
-
-# 查看服务状态
-make status
-
-# 查看日志
-make logs
-```
+### 服务端口分配
+- **GUI应用**: 3000
+- **Rust后端**: 8001
+- **Java后端**: 8002
+- **Python智能体**: 8003
+- **Java智能体**: 8004
+- **编排服务**: 8005
+- **PostgreSQL**: 5432
+- **Redis**: 6379

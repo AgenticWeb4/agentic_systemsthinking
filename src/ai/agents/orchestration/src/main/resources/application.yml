@@ -1,0 +1,59 @@
+server:
+  port: 8005
+
+spring:
+  application:
+    name: agent-orchestration-service
+  
+  # 配置属性绑定
+  configuration:
+    properties:
+      orchestration:
+        health-check-interval: 30000  # 30秒
+        timeout: 5000                 # 5秒超时
+        retry-count: 3                # 重试次数
+
+# 编排服务配置
+orchestration:
+  health-check-interval: 30000
+  timeout: 5000
+  retry-count: 3
+  circuit-breaker:
+    enabled: true
+    failure-threshold: 5
+    recovery-timeout: 60000
+
+# 智能体配置
+agents:
+  python_agent:
+    name: "PythonAgent"
+    type: "python"
+    endpoint: "http://localhost:8003"
+    health-check: "/health"
+    capabilities: ["system_analysis", "problem_solving"]
+    metadata:
+      version: "1.0.0"
+      description: "Python-based system analysis agent"
+      
+  java_agent:
+    name: "JavaAgent"
+    type: "java"
+    endpoint: "http://localhost:8004"
+    health-check: "/api/health"
+    capabilities: ["decision_making", "data_processing"]
+    metadata:
+      version: "1.0.0"
+      description: "Java-based decision making agent"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.agentic.systemthinking.orchestration: DEBUG

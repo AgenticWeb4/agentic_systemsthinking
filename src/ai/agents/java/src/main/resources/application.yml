@@ -1,0 +1,50 @@
+server:
+  port: 8004
+
+spring:
+  application:
+    name: java-agent-system
+  
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/mydb}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:password}
+    driver-class-name: org.postgresql.Driver
+  
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  
+  data:
+    redis:
+      host: ${SPRING_REDIS_HOST:localhost}
+      port: ${SPRING_REDIS_PORT:6379}
+      database: 1
+  
+  ai:
+    alibaba:
+      dashscope:
+        api-key: ${DASH_SCOPE_API_KEY:your-api-key-here}
+        chat:
+          options:
+            model: qwen-turbo
+            temperature: 0.7
+            max-tokens: 1000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.agentic.systemthinking.agents: DEBUG
+    org.springframework.ai: DEBUG

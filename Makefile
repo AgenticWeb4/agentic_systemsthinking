@@ -19,7 +19,9 @@ build:
 	@cd src/client/desktop && npm install
 	@cd src/server/rust && cargo build --release
 	@cd src/server/java && mvn clean package -DskipTests
-	@cd src/ai/agents && pip install -r requirements.txt
+	@cd src/ai/agents/python && pip install -r requirements.txt
+	@cd src/ai/agents/java && mvn clean package -DskipTests
+	@cd src/ai/agents/orchestration && mvn clean package -DskipTests
 	@echo "构建完成!"
 
 # 启动开发环境
@@ -32,7 +34,24 @@ dev:
 	@echo "  GUI应用: http://localhost:3000"
 	@echo "  Rust后端: http://localhost:8001"
 	@echo "  Java后端: http://localhost:8002"
-	@echo "  智能体系统: http://localhost:8003"
+	@echo "  Python智能体: http://localhost:8003"
+	@echo "  Java智能体: http://localhost:8004"
+	@echo "  编排服务: http://localhost:8005"
+	@echo "  PostgreSQL: localhost:5432"
+	@echo "  Redis: localhost:6379"
+
+# 启动核心服务（不包括GUI）
+dev-core:
+	@echo "启动核心服务..."
+	@./scripts/dev/check-docker.sh
+	@docker-compose up -d --build postgres redis rust-backend java-backend python-agent java-agent orchestration
+	@echo "核心服务启动完成!"
+	@echo "服务地址:"
+	@echo "  Rust后端: http://localhost:8001"
+	@echo "  Java后端: http://localhost:8002"
+	@echo "  Python智能体: http://localhost:8003"
+	@echo "  Java智能体: http://localhost:8004"
+	@echo "  编排服务: http://localhost:8005"
 	@echo "  PostgreSQL: localhost:5432"
 	@echo "  Redis: localhost:6379"
 
@@ -61,9 +80,11 @@ logs-service:
 # 运行测试
 test:
 	@echo "运行测试..."
-	@cd apps/backend-rust && cargo test
-	@cd apps/backend-java && mvn test
-	@cd apps/agent-system && python -m pytest tests/ -v
+	@cd src/server/rust && cargo test
+	@cd src/server/java && mvn test
+	@cd src/ai/agents/python && python -m pytest tests/ -v
+	@cd src/ai/agents/java && mvn test
+	@cd src/ai/agents/orchestration && mvn test
 
 # 清理构建文件
 clean:
@@ -71,7 +92,9 @@ clean:
 	@cd src/client/desktop && rm -rf node_modules dist
 	@cd src/server/rust && cargo clean
 	@cd src/server/java && mvn clean
-	@cd src/ai/agents && find . -type d -name __pycache__ -delete
+	@cd src/ai/agents/python && find . -type d -name __pycache__ -delete
+	@cd src/ai/agents/java && mvn clean
+	@cd src/ai/agents/orchestration && mvn clean
 	@docker-compose down -v
 	@docker system prune -f
 	@echo "清理完成!"
@@ -87,16 +110,28 @@ health-check:
 	@curl -s http://localhost:8001/health | jq .
 	@curl -s http://localhost:8002/health | jq .
 	@curl -s http://localhost:8003/health | jq .
+	@curl -s http://localhost:8004/health | jq .
+	@curl -s http://localhost:8005/health | jq .
 
 # 数据库连接测试
 db-test:
 	@echo "测试数据库连接..."
-	@docker exec agentic_postgres psql -U postgres -d agentic_systemthinking -c "SELECT version();"
+	@docker exec agentic_postgres psql -U postgres -d mydb -c "SELECT version();"
+
+# Redis连接测试
+redis-test:
+	@echo "测试Redis连接..."
+	@docker exec agentic_redis redis-cli ping
 
 # 服务状态
 status:
 	@echo "查看服务状态..."
 	@docker-compose ps
+
+# 智能体状态检查
+agent-status:
+	@echo "检查智能体状态..."
+	@curl -s http://localhost:8005/api/agents/status | jq .
 
 # 配置验证
 validate-config:

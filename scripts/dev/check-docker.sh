@@ -1,54 +1,47 @@
 #!/bin/bash
 
 # Docker状态检查脚本
+# 重构版本：使用通用函数库和配置
 
-echo "🔍 检查Docker状态..."
+set -euo pipefail
 
-# 检查Docker是否安装
-if ! command -v docker &> /dev/null; then
-    echo "❌ Docker未安装，请先安装Docker"
-    exit 1
-fi
+# 获取脚本所在目录
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# 检查Docker是否运行
-if ! docker info > /dev/null 2>&1; then
-    echo "❌ Docker守护进程未运行"
-    echo ""
-    echo "请执行以下操作之一："
-    echo "1. 启动Docker Desktop应用程序"
-    echo "2. 或者在终端运行: sudo systemctl start docker (Linux)"
-    echo "3. 或者在终端运行: open -a Docker (macOS)"
-    echo ""
-    echo "等待Docker启动完成后，再次运行此脚本"
-    exit 1
-fi
+# 导入通用函数库和配置
+source "$SCRIPT_DIR/../lib/common.sh"
+source "$SCRIPT_DIR/../config/services.conf"
 
-echo "✅ Docker运行正常"
-echo "Docker版本: $(docker --version)"
-echo "Docker Compose版本: $(docker-compose --version)"
+# 脚本信息
+SCRIPT_NAME="check-docker.sh"
+SCRIPT_VERSION="2.0.0"
+SCRIPT_DESCRIPTION="检查Docker状态和端口占用"
 
-# 检查端口占用
-echo ""
-echo "🔍 检查端口占用..."
-check_port() {
-    local port=$1
-    local service=$2
-    if lsof -Pi :$port -sTCP:LISTEN -t >/dev/null 2>&1; then
-        echo "⚠️  端口 $port 已被占用 ($service)"
-        return 1
-    else
-        echo "✅ 端口 $port 可用"
-        return 0
-    fi
+# 显示脚本信息
+log_section "Docker状态检查脚本"
+log_info "版本: $SCRIPT_VERSION"
+log_info "描述: $SCRIPT_DESCRIPTION"
+
+# 主函数
+main() {
+    # 检查Docker状态
+    check_docker
+    
+    # 检查端口占用
+    check_all_ports
+    
+    # 显示结果
+    show_final_status
 }
 
-check_port 3000 "GUI应用"
-check_port 8001 "Rust后端"
-check_port 8002 "Java后端"
-check_port 8003 "智能体系统"
-check_port 5432 "PostgreSQL"
-check_port 6379 "Redis"
+# 显示最终状态
+show_final_status() {
+    echo ""
+    log_success "Docker环境检查完成！"
+    log_info "现在可以运行: make dev 或 ./scripts/dev/start-complete.sh"
+}
 
-echo ""
-echo "🎉 Docker环境检查完成！"
-echo "现在可以运行: make dev"
+# 脚本入口
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
+fi

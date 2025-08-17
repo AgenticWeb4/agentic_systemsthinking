@@ -15,7 +15,7 @@ services:
     networks:
       - agentic_network
 
-  # Redis缓存
+  # Redis缓存和消息中间件
   redis:
     image: redis:7.2.0
     container_name: agentic_redis
@@ -29,8 +29,8 @@ services:
   # Rust后端服务
   rust-backend:
     build:
-      context: ./src/server/rust
-      dockerfile: ../../docker/dev/Dockerfile.rust
+      context: .
+      dockerfile: ./docker/dev/Dockerfile.rust
     container_name: agentic_rust_backend
     ports:
       - "8001:8001"
@@ -45,8 +45,8 @@ services:
   # Java后端服务
   java-backend:
     build:
-      context: ./src/server/java
-      dockerfile: ../../docker/dev/Dockerfile.java
+      context: .
+      dockerfile: ./docker/dev/Dockerfile.java
     container_name: agentic_java_backend
     ports:
       - "8002:8002"
@@ -59,16 +59,57 @@ services:
     networks:
       - agentic_network
 
-  # 智能体系统
-  agent-system:
+  # Python智能体服务
+  python-agent:
     build:
-      context: ./src/ai/agents
-      dockerfile: ../../docker/dev/Dockerfile.agent
-    container_name: agentic_agent_system
+      context: ./src/ai/agents/python
+      dockerfile: Dockerfile
+    container_name: agentic_python_agent
     ports:
       - "8003:8003"
     environment:
       - DATABASE_URL=postgresql+asyncpg://postgres:password@postgres:5432/mydb
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - agentic_network
+
+  # Java智能体服务
+  java-agent:
+    build:
+      context: ./src/ai/agents/java
+      dockerfile: Dockerfile
+    container_name: agentic_java_agent
+    ports:
+      - "8004:8004"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/mydb
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - agentic_network
+
+  # 智能体编排服务
+  orchestration:
+    build:
+      context: ./src/ai/agents/orchestration
+      dockerfile: Dockerfile
+    container_name: agentic_orchestration
+    ports:
+      - "8005:8005"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/mydb
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
     depends_on:
       - postgres
       - redis
@@ -78,15 +119,17 @@ services:
   # GUI应用（开发模式）
   gui:
     build:
-      context: ./src/client/desktop
-      dockerfile: ../../docker/dev/Dockerfile.gui
+      context: .
+      dockerfile: ./docker/dev/Dockerfile.gui
     container_name: agentic_gui
     ports:
       - "3000:80"
     depends_on:
       - rust-backend
       - java-backend
-      - agent-system
+      - python-agent
+      - java-agent
+      - orchestration
     networks:
       - agentic_network
 
